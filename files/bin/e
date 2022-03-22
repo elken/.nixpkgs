@@ -1,0 +1,9 @@
+#!/usr/bin/env zsh
+
+if [ "$INSIDE_EMACS" = 'vterm' ]; then
+    . "$HOME/.config/zsh/vterm.zsh"
+
+    find_file "$@"
+else
+    emacsclient -t -nw "$@"
+fi

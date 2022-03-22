@@ -1,0 +1,245 @@
+#!/usr/bin/env bash
+
+colorBl="\e[38;5;0m"
+colorR="\e[38;5;1m"
+colorG="\e[38;5;2m"
+colorY="\e[38;5;3m"
+colorB="\e[38;5;4m"
+colorM="\e[38;5;5m"
+colorC="\e[38;5;6m"
+colorW="\e[38;5;7m"
+bold="\033[1m"
+bold_reset="\033[0m"
+reset="\e[0m"
+
+proceed() {
+  Y="$(gettext pacman Y)"
+  y="$(echo $Y | tr '[:upper:]' '[:lower:]')"
+  N="$(gettext pacman N)"
+  n="$(echo $N | tr '[:upper:]' '[:lower:]')"
+  case "$1" in
+    y)
+      printf "${colorB}%s${reset} ${colorW}%s${reset}" $"$2 [Y/n] "
+      read -n 1 answer
+      echo
+      case $answer in
+        $Y | $y | '') return 0 ;;
+        *) return 1 ;;
+      esac
+      ;;
+    n)
+      printf "${colorB}%s${reset} ${colorW}%s${reset}" $"$2 [y/N] "
+      read -n 1 answer
+      echo
+      case $answer in
+        $N | $n | '') return 0 ;;
+        *) return 1 ;;
+      esac
+      ;;
+  esac
+}
+
+error_msg() {
+  printf "${colorR}Error: ${colorW}%s${reset}\n" "${1}"
+}
+
+status_msg() {
+  printf "${colorG}%s${reset}\n" "${1}"
+}
+
+header_msg() {
+  printf "\n${colorB}${bold}%s${bold_reset}${reset}\n" "${1}"
+}
+
+. /etc/profile
+
+header_msg "Setup"
+
+git clone https://github.com/elken/.nixpkgs ~/.config/nixpkgs
+
+status_msg "Checking OS"
+
+system=$(uname -s)
+distro=$(grep ^NAME /etc/os-release | cut -d= -f2)
+variant=$(grep ^VARIANT_ID /etc/os-release | cut -d= -f2)
+
+if [ $? -ne 0 ]; then
+  distro=""
+fi
+
+if [ -z "$distro" ]; then
+  printf "${colorB}Looks like ${colorW}${bold}${system}${bold_reset}${reset}\n"
+else
+  printf "${colorB}Looks like ${colorW}${bold}${distro}${bold_reset}${reset}\n"
+fi
+
+if [ "$distro" = "\"Fedora Linux\"" ]; then
+  sudo setenforce 0
+  sudo semanage fcontext -a -t etc_t '/nix/store/[^/]+/etc(/.*)?'
+  sudo semanage fcontext -a -t lib_t '/nix/store/[^/]+/lib(/.*)?'
+  sudo semanage fcontext -a -t systemd_unit_file_t '/nix/store/[^/]+/lib/systemd/system(/.*)?'
+  sudo semanage fcontext -a -t man_t '/nix/store/[^/]+/man(/.*)?'
+  sudo semanage fcontext -a -t bin_t '/nix/store/[^/]+/s?bin(/.*)?'
+  sudo semanage fcontext -a -t usr_t '/nix/store/[^/]+/share(/.*)?'
+  sudo semanage fcontext -a -t var_run_t '/nix/var/nix/daemon-socket(/.*)?'
+  sudo semanage fcontext -a -t usr_t '/nix/var/nix/profiles(/per-user/[^/]+)?/[^/]+'
+  if [ "$variant" = "silverblue" ]; then
+    sudo mkdir -p /var/nix
+    sudo cp .bootstrap.d/mkdir-rootfs@.service /etc/systemd/system/
+    sudo cp .bootstrap.d/nix.mount /etc/systemd/system/
+    sudo cp .bootstrap.d/nix-boot.service /etc/systemd/system/
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now nix.mount
+    sudo systemctl enable nix-boot.service
+    sudo restorecon -RF /nix
+  else
+      sudo dnf install -y zsh
+      sudo usermod --shell /bin/zsh $USER
+  fi
+fi
+
+header_msg "Nix-y stuff"
+if ! command -v nix >/dev/null 2>&1; then
+  status_msg "Installing Nix"
+  if [ "$system" = "Darwin" ]; then
+    sh <(curl -L https://nixos.org/nix/install)
+  elif [ "$system" = "Linux" ]; then
+    sh <(curl -L https://nixos.org/nix/install) --daemon
+  fi
+
+  if [ $? -ne 0 ]; then
+    error_msg "Failed to install nix"
+    exit 1
+  fi
+
+  . /etc/profile
+fi
+
+status_msg "Setting up cachix"
+echo "trusted-users = root test" | sudo tee -a /etc/nix/nix.conf && sudo pkill nix-daemon
+nix-env -iA cachix -f https://cachix.org/api/v1/install
+cachix use nix-community
+nix-env -e cachix
+
+header_msg "Post-nix"
+status_msg "Getting all dependencies"
+mkdir -p ~/.config/chemacs
+pushd ~/.config
+git clone https://github.com/elken/doom
+git clone https://github.com/elken/nvim
+git clone https://github.com/plexus/chemacs2 emacs
+git clone https://github.com/doomemacs/doomemacs chemacs/doom
+popd
+
+status_msg "Setting up directories"
+mkdir -p ~/.ssh
+
+status_msg "Adding home-manager"
+nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
+export NIX_PATH=$HOME/.nix-defexpr/channels:/nix/var/nix/profiles/per-user/root/channels${NIX_PATH:+:$NIX_PATH}
+nix-channel --update
+
+if [ "$system" = "Darwin" ]; then
+  darwin-rebuild switch
+elif [ "$system" = "Linux" ]; then
+  nix-shell '<home-manager>' -A install
+fi
+
+status_msg "Moving to SSH"
+pushd ~/.config/doom
+git remote set-url origin "git@github.com:elken/doom"
+popd
+
+pushd ~/.config/nvim
+git remote set-url origin "git@github.com:elken/nvim"
+popd
+
+status_msg "Sourcing shell config"
+source $HOME/.zshenv
+
+if [ "$system" = "Darwin" ]; then
+  if ! command -v brew >/dev/null 2>&1; then
+    status_msg "Homebrew not installed, installing now"
+    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  fi
+fi
+
+if [ ! -e "$HOME/.config/.bootstrap-done" ]; then
+  header_msg "Getting GTK themes/icons"
+
+  status_msg "Papirus icons"
+  wget -qO- https://git.io/papirus-icon-theme-install | DESTDIR="$HOME/.icons" sh
+
+  status_msg "Vimix Cursors"
+  pushd $(mktemp -d /tmp/vimix.XXXXX || exit 1)
+  wget https://github.com/vinceliuice/Vimix-cursors/archive/refs/heads/master.zip
+  unzip master.zip
+  cd Vimix-cursors-master
+  ./install.sh
+  popd
+
+  status_msg "Nordic"
+  git clone https://github.com/EliverLara/Nordic ~/.themes/Nordic
+
+  header_msg "Last minute changes"
+  status_msg "Changing Paprius icons to Nordic"
+  git clone https://github.com/PapirusDevelopmentTeam/papirus-folders
+  pushd papirus-folders
+  ./papirus-folders -C nordic
+  popd
+  rm -rf papirus-folders
+
+  if command -v jq >/dev/null 2>&1; then
+    status_msg "Grabbing extensions"
+    function download_shell_extension() {
+        local tempdir=$(mktemp -d /tmp/$1.XXXXXXX)
+        local store_url="https://extensions.gnome.org/download-extension"
+        local extensions_path="$HOME/.local/share/gnome-shell/extensions"
+        if [[ ! -d "$extensions_path/$uuid" ]]; then
+        pushd $tempdir
+        curl "https://extensions.gnome.org/extension-query/?page=1&shell_version=3.34&search=${1}" | jq -sR | tr -d '\n\n' >file.json
+        local uuid=$(cat file.json | jq 'fromjson | .extensions[0].uuid' | tr -d '"')
+        local gnome_version=$(cat /usr/share/gnome/gnome-version.xml | xq -e 'gnome-version' | awk 'NR == 2' | xargs)
+        local pk=$(cat file.json | jq 'fromjson | .extensions[0].shell_version_map | ."'"${gnome_version}"'" | .pk')
+        local ver=$(cat file.json | jq 'fromjson | .extensions[0].shell_version_map | ."'"${gnome_version}"'" | .version')
+        trap "popd && rm -rf $tempdir" ERR INT TERM EXIT
+        if [ $uuid != $1 ]; then
+            error_msg "$uuid different to $1"
+            popd
+            return
+        fi
+
+        wget "$store_url/$uuid.shell-extension.zip?version_tag=$pk" -O "$uuid.shell-extension.zip"
+
+        gnome-extensions install "$uuid.shell-extension.zip"
+        gnome-extensions enable "$uuid"
+        popd
+        fi
+    }
+
+    download_shell_extension user-theme@gnome-shell-extensions.gcampax.github.com
+    download_shell_extension gsconnect@andyholmes.github.io
+    download_shell_extension gamemode@christian.kellner.me
+    download_shell_extension appindicatorsupport@rgcjonas.gmail.com
+    download_shell_extension openweather-extension@jenslody.de
+    download_shell_extension applications-overview-tooltip@RaphaelRochet
+    download_shell_extension sound-output-device-chooser@kgshank.net
+    download_shell_extension no-overview@fthx
+    download_shell_extension blur-my-shell@aunetx
+    download_shell_extension dash-to-dock@micxgx.gmail.com
+    download_shell_extension windowIsReady_Remover@nunofarruca@gmail.com
+    download_shell_extension burn-my-windows@schneegans.github.com
+    download_shell_extension replaceActivitiesText@pratap.fastmail.fm
+    download_shell_extension dash-to-dock-cosmic-@halfmexicanhalfamazing@gmail.com
+  fi
+  status_msg "Applying gsettings"
+  dconf load / <dump.dconf
+
+  wget https://static.wikia.nocookie.net/finalfantasy/images/5/53/FFVIIR_Midgar.jpg -O $HOME/.local/share/backgrounds/FFVIIR_Midgar.jpg
+  gsettings set org.gnome.desktop.background picture-uri "file://$HOME/.local/share/backgrounds/FFVIIR_Midgar.jpg"
+  gsettings set org.gnome.desktop.screensaver picture-uri "file://$HOME/.local/share/backgrounds/FFVIIR_Midgar.jpg"
+
+  header_msg "Please logout to apply extension changes"
+  touch $HOME/.config/.bootstrap-done
+fi
