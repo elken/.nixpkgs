@@ -1,0 +1,35 @@
+#+title: .files
+#+author: Ellis Kenyő
+#+date: 2022-03-25
+#+latex_class: chameleon
+
+Flake-less (for now) [[https://github.com/nix-community/home-manager][home-manager]] based [[https://nixos.org/learn.html][Nix]] config. Also includes my [[https://github.com/LnL7/nix-darwin][nix-darwin]] setup.
+
+* [[file:bootstrap][bootstrap]]
+Simple script to install Nix and set everything up for me. In an ideal world, I'd be able to just =curl= this but not /just/ yet.
+
+- Install Nix
+- Setup cachix
+- Clone my emacs setup (chemacs is pinned in [[file:home.nix][home-manager]])
+- Create some directories (config is assumed already, would need to be handled properly to be =curl=-able)
+- Install home-manager and create the first generation (/could/ take a while but with cachix setup properly it's normally done in a few minutes)
+- Few smaller tweaks
+- Install [[https://brew.sh][brew]] if on MacOS
+- Sync doom setup (currently can cause issues if the environment isn't properly sourced)
+
+* [[file:pam.nix][pam.nix]]
+Overrides to allow the usage of Touch ID for sudo commands.
+
+[[file:.github/assets/sudo.png]]
+
+Toggle with ~security.pam.enableSudoTouchIdAuth = <true/false>~ in [[file:darwin-configuration.nix][darwin-configuration.nix]].
+
+* [[file:home.nix][home.nix]]
+The main home-manager setup.  The overall config is lightly documented and quite straightforward. I took the opportunity to greatly simplify my dotfiles, it also where possible handles settings consistently for both MacOS and Linux (though the Linux might need some tweaking).
+
+This will likely expand to a proper NixOS setup at some point, but for now I'm satiated.o
+
+* [[file:darwin-configuration.nix][darwin-configuration.nix]]
+My setup for MacOS. I don't have more-than-1-machine needs for MacOS so I'm fine with a one-size-fits-all setup.
+
+Where possible I've tried to prefer using Nix; however it's not quite possible for GUI apps and a few exceptions. Alfred makes it quite difficult to use Nix with so I've had to include a couple of brew packages.
