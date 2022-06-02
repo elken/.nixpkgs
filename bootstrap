@@ -54,6 +54,9 @@ header_msg() {
 . /etc/profile
 
 header_msg "Setup"
+
+git clone https://elken/.nixpkgs ~/.config/nixpkgs
+
 status_msg "Checking OS"
 
 system=$(uname -s)
