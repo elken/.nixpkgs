@@ -76,6 +76,8 @@ in rec {
       msmtp
       neovim
       (nerdfonts.override { fonts = [ "Iosevka" ]; })
+      nodePackages.bash-language-server
+      nodePackages.vscode-json-languageserver
       niv
       nixfmt
       nodejs
@@ -106,6 +108,7 @@ in rec {
       arandr
       docker
       firefox
+      libnotify
       lutris
       mangohud
     ];
@@ -267,6 +270,7 @@ in rec {
         "$HOME/.dwm/bin"
         "$HOME/.dotnet/tools"
         "$HOME/spicetify-cli"
+        "$HOME/.spicetify"
         "$HOME/.luarocks/bin"
         "/usr/local/bin"
         "/usr/local/sbin"
@@ -446,22 +450,6 @@ in rec {
   };
 
   # Mostly Linux things below
-
-  # Control X Settings (theme, icons, etc)
-  services.xsettingsd = {
-    enable = stdenv.isLinux;
-    settings = {
-      "Net/ThemeName" = "Nordic";
-      "Net/IconThemeName" = "EPapirus-Dark";
-      "Gtk/DecorationLayout" = "menu:minimize,maximize,close";
-      "Gtk/FontName" = "Overpass 11";
-      "Gtk/MonospaceFontName" = "Iosevka Nerd Font Mono 10";
-      "Gtk/CursorThemeName" = "Vimix-cursors";
-      "Xft/Antialias" = 1;
-      "Xft/Hinting" = 0;
-      "Xft/HintStyle" = "hintnone";
-    };
-  };
 
   # Extra files
   home.file = {
