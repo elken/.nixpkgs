@@ -1,3 +1,4 @@
+# -*- compile-command: "if [[ $(uname -s) == 'Darwin' ]]; then darwin-rebuild switch; else home-manager switch; fi" -*-
 { config, lib, pkgs, ... }:
 
 with import <nixpkgs> { };
@@ -53,6 +54,7 @@ in rec {
       (aspellWithDicts (dicts: with dicts; [ en en-computers en-science ]))
       asciinema
       bat
+      black
       cachix
       cargo
       cask
@@ -61,7 +63,6 @@ in rec {
       coreutils
       curl
       delta
-      dotnet-sdk
       emacs-all-the-icons-fonts
       exa
       fasd
@@ -73,6 +74,7 @@ in rec {
       isync
       jq
       keychain
+      kotlin-language-server
       msmtp
       neovim
       (nerdfonts.override { fonts = [ "Iosevka" ]; })
@@ -84,8 +86,10 @@ in rec {
       overpass
       pandoc
       p7zip
+      python
       (ripgrep.override { withPCRE2 = true; })
       rnix-lsp
+      sbcl
       shellcheck
       spicetify-cli
       sqlite
@@ -95,10 +99,11 @@ in rec {
       wget
       xsel
       yarn
+      yaml-language-server
       yq
     ] ++ optionals stdenv.isDarwin [
       cocoapods
-      jdk11_headless
+      jdk17_headless
       maven
       m-cli
       php80Packages.phpcbf
@@ -257,7 +262,7 @@ in rec {
       XDG_DATA_HOME = xdg.dataHome;
 
       PATH = concatStringsSep ":" ([
-        "${pkgs.jdk11}/bin"
+        "${pkgs.jdk17}/bin"
         "$HOME/bin"
         "/usr/local/share/dotnet"
         "$HOME/.composer/vendor/bin"
@@ -292,7 +297,7 @@ in rec {
 
       PULSE_LATENCY_MSEC = 120;
 
-      JAVA_HOME = pkgs.jdk11;
+      JAVA_HOME = pkgs.jdk17;
     } // (if stdenv.isDarwin then {
       ANDROID_HOME = "~/Library/Android/sdk";
     } else
