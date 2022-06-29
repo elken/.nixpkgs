@@ -117,7 +117,7 @@ if ! command -v nix >/dev/null 2>&1; then
 fi
 
 status_msg "Setting up cachix"
-echo "trusted-users = root test" | sudo tee -a /etc/nix/nix.conf && sudo pkill nix-daemon
+echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf && sudo pkill nix-daemon
 nix-env -iA cachix -f https://cachix.org/api/v1/install
 cachix use nix-community
 nix-env -e cachix
