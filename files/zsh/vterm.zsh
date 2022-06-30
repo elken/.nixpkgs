@@ -31,5 +31,10 @@ magit_current(){
     vterm_cmd magit-status "$(realpath "${@:-.}")"
 }
 
+woman () {
+    vterm_cmd woman $1
+}
+
 alias clear='vterm_printf "51;Evterm-clear-scrollback";tput clear'
 alias mg='magit_current'
+alias man='woman'

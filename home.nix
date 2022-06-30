@@ -1,4 +1,3 @@
-# -*- compile-command: "if [[ $(uname -s) == 'Darwin' ]]; then darwin-rebuild switch; else home-manager switch; fi" -*-
 { config, lib, pkgs, ... }:
 
 with import <nixpkgs> { };
@@ -110,12 +109,19 @@ in rec {
       pr158737.mysql80
       terminal-notifier
     ] ++ optionals stdenv.isLinux [
+      alacritty
       arandr
+      dmenu
       docker
+      dunst
       firefox
       libnotify
       lutris
       mangohud
+      networkmanagerapplet
+      nitrogen
+      picom
+      siji
     ];
 
   # Enable XDG directories
@@ -220,6 +226,7 @@ in rec {
       # TODO: Remove me after https://github.com/NixOS/nixpkgs/pull/173468 is revoled
       cask =
         "EMACS=/nix/store/syydi42dblldm6djjrixw18k8k29qanw-emacs-28.1/bin/emacs ${pkgs.cask}/bin/cask";
+      spicetify = "spicetify-cli";
     } // (if stdenv.isDarwin then {
       hsw = "darwin-rebuild switch";
     } else {
@@ -244,7 +251,7 @@ in rec {
       LANG = "en_GB.UTF-8";
       LC_ALL = "en_GB.UTF-8";
 
-      NVIM_TUI_ENABLE_TRUE_COLOR = "1";
+      NVIM_TUI_ENABLE_TRUE_COLOR = 1;
 
       BROWSER = if stdenv.isDarwin then "open" else "xdg-open";
 
@@ -277,9 +284,6 @@ in rec {
         "$HOME/spicetify-cli"
         "$HOME/.spicetify"
         "$HOME/.luarocks/bin"
-        "/usr/local/bin"
-        "/usr/local/sbin"
-        "/usr/bin"
         "$HOME/.config/chemacs/doom/bin"
       ] ++ optionals pkgs.stdenv.isDarwin [
         "/opt/homebrew/bin"
