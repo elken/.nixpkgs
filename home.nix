@@ -74,6 +74,8 @@ in rec {
       jq
       keychain
       kotlin-language-server
+      lazydocker
+      lazygit
       msmtp
       neovim
       (nerdfonts.override { fonts = [ "Iosevka" ]; })
