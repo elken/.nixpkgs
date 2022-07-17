@@ -57,6 +57,7 @@ in rec {
       cachix
       cargo
       cask
+      clippy
       cmake
       comma
       coreutils
@@ -77,7 +78,6 @@ in rec {
       lazydocker
       lazygit
       msmtp
-      neovim
       (nerdfonts.override { fonts = [ "Iosevka" ]; })
       nodePackages.bash-language-server
       nodePackages.vscode-json-languageserver
@@ -90,11 +90,15 @@ in rec {
       python
       (ripgrep.override { withPCRE2 = true; })
       rnix-lsp
+      rust-analyzer
+      rustc
+      rustfmt
       sbcl
       shellcheck
       spicetify-cli
       sqlite
       stylua
+      tectonic
       unrar
       unzip
       wget
@@ -111,7 +115,6 @@ in rec {
       pr158737.mysql80
       terminal-notifier
     ] ++ optionals stdenv.isLinux [
-      alacritty
       arandr
       dmenu
       docker
@@ -123,6 +126,7 @@ in rec {
       networkmanagerapplet
       nitrogen
       picom
+      ranger
       siji
     ];
 
@@ -454,11 +458,11 @@ in rec {
   };
 
   # The best IDE in the world, just lacks a good text editor
-  programs.emacs = {
-    enable = stdenv.isLinux;
-    package = pkgs.emacsNativeComp;
-    extraPackages = epkgs: with epkgs; [ vterm emacsql-sqlite pdf-tools ];
-  };
+  # programs.emacs = {
+  #   enable = stdenv.isLinux;
+  #   package = (pkgs.emacsNativeComp.override { withXwidgets = true; });
+  #   extraPackages = epkgs: with epkgs; [ vterm emacsql-sqlite pdf-tools ];
+  # };
 
   # Mostly Linux things below
 
