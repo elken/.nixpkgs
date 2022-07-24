@@ -35,6 +35,11 @@ woman () {
     vterm_cmd woman $1
 }
 
+dired () {
+    vterm_cmd dired "$(realpath "${@:-.}")"
+}
+
 alias clear='vterm_printf "51;Evterm-clear-scrollback";tput clear'
 alias mg='magit_current'
 alias man='woman'
+alias fm='dired'
