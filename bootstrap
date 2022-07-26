@@ -192,29 +192,31 @@ if [ ! -e "$HOME/.config/.bootstrap-done" ]; then
 
   if command -v jq >/dev/null 2>&1; then
     status_msg "Grabbing extensions"
-    function download_shell_extension() {
+
+function download_shell_extension() {
         local tempdir=$(mktemp -d /tmp/$1.XXXXXXX)
         local store_url="https://extensions.gnome.org/download-extension"
         local extensions_path="$HOME/.local/share/gnome-shell/extensions"
-        if [[ ! -d "$extensions_path/$uuid" ]]; then
-        pushd $tempdir
-        curl "https://extensions.gnome.org/extension-query/?page=1&shell_version=3.34&search=${1}" | jq -sR | tr -d '\n\n' >file.json
+	local gnome_version=$(cat /usr/share/gnome/gnome-version.xml | grep platform | cut -d">" -f2 | cut -d "<" -f1)
+        
+	pushd $tempdir
+        curl "https://extensions.gnome.org/extension-query/?page=1&shell_version=${gnome-version}&search=${1}" | jq -sR | tr -d '\n\n' >file.json
         local uuid=$(cat file.json | jq 'fromjson | .extensions[0].uuid' | tr -d '"')
-        local gnome_version=$(cat /usr/share/gnome/gnome-version.xml | xq -e 'gnome-version' | awk 'NR == 2' | xargs)
-        local pk=$(cat file.json | jq 'fromjson | .extensions[0].shell_version_map | ."'"${gnome_version}"'" | .pk')
-        local ver=$(cat file.json | jq 'fromjson | .extensions[0].shell_version_map | ."'"${gnome_version}"'" | .version')
-        trap "popd && rm -rf $tempdir" ERR INT TERM EXIT
-        if [ $uuid != $1 ]; then
-            error_msg "$uuid different to $1"
-            popd
-            return
-        fi
+        if [[ ! -d "$extensions_path/$uuid" ]]; then
+		local pk=$(cat file.json | jq 'fromjson | .extensions[0].shell_version_map | ."'"${gnome_version}"'" | .pk')
+		local ver=$(cat file.json | jq 'fromjson | .extensions[0].shell_version_map | ."'"${gnome_version}"'" | .version')
+		trap "popd && rm -rf $tempdir" ERR INT TERM EXIT
+		if [ $uuid != $1 ]; then
+		    error_msg "$uuid different to $1"
+		    popd
+		    return
+		fi
 
-        wget "$store_url/$uuid.shell-extension.zip?version_tag=$pk" -O "$uuid.shell-extension.zip"
+		wget "$store_url/$uuid.shell-extension.zip?version_tag=$pk" -O "$uuid.shell-extension.zip"
 
-        gnome-extensions install "$uuid.shell-extension.zip"
-        gnome-extensions enable "$uuid"
-        popd
+		gnome-extensions install "$uuid.shell-extension.zip"
+		gnome-extensions enable "$uuid"
+		popd
         fi
     }
 
