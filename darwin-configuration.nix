@@ -92,6 +92,7 @@
     ];
     extraConfig = ''
       brew "emacs-plus@28", args: ["with-native-comp", "with-xwidgets", "with-modern-doom3-icon", "with-mailutils"], restart_service: :changed
+      brew "neovim", args: ["HEAD"]
     '';
   };
 

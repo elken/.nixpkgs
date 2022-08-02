@@ -81,6 +81,8 @@ in rec {
       (nerdfonts.override { fonts = [ "Iosevka" ]; })
       nodePackages.bash-language-server
       nodePackages.vscode-json-languageserver
+      nodePackages.typescript-language-server
+      nodePackages.vls
       niv
       nixfmt
       nodejs
@@ -98,7 +100,6 @@ in rec {
       spicetify-cli
       sqlite
       stylua
-      tectonic
       unrar
       unzip
       wget
@@ -108,10 +109,12 @@ in rec {
       yq
     ] ++ optionals stdenv.isDarwin [
       cocoapods
+      git-lfs
       jdk17_headless
       maven
       m-cli
       php80Packages.phpcbf
+      php80Packages.composer
       pr158737.mysql80
       terminal-notifier
     ] ++ optionals stdenv.isLinux [
@@ -128,6 +131,7 @@ in rec {
       picom
       ranger
       siji
+      tectonic
     ];
 
   # Enable XDG directories
@@ -169,6 +173,7 @@ in rec {
   # Basic git config
   programs.git = {
     enable = true;
+    lfs.enable = true;
     userName = "Ellis Kenyő";
     userEmail =
       if stdenv.isDarwin then "ellis@coreblue.co.uk" else "me@elken.dev";
@@ -233,6 +238,8 @@ in rec {
       cask =
         "EMACS=/nix/store/syydi42dblldm6djjrixw18k8k29qanw-emacs-28.1/bin/emacs ${pkgs.cask}/bin/cask";
       spicetify = "spicetify-cli";
+      art = "artisan";
+      sail = "./vendor/bin/sail";
     } // (if stdenv.isDarwin then {
       hsw = "darwin-rebuild switch";
     } else {
