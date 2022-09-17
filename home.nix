@@ -8,8 +8,7 @@ with lib.filesystem;
 
 let
   nixpkgs-tars = "https://github.com/NixOS/nixpkgs/archive/";
-  unstable = import (fetchTarball
-    "https://github.com/NixOS/nixpkgs/archive/nixos-unstable.tar.gz");
+  unstable = import <unstable> { };
   filesDir = (toPath ./files); # Shorthand variable to easily access files
   link = config.lib.file.mkOutOfStoreSymlink;
 in rec {
@@ -58,7 +57,7 @@ in rec {
       cargo
       cask
       clippy
-      cmake
+      clojure
       comma
       coreutils
       curl
@@ -78,6 +77,7 @@ in rec {
       kotlin-language-server
       lazydocker
       lazygit
+      leiningen
       msmtp
       (nerdfonts.override { fonts = [ "Iosevka" ]; })
       nodePackages.bash-language-server
@@ -98,6 +98,7 @@ in rec {
       rustfmt
       sbcl
       shellcheck
+      shfmt
       spicetify-cli
       sqlite
       stylua
@@ -108,6 +109,7 @@ in rec {
       yarn
       yaml-language-server
       yq
+      zprint
     ] ++ optionals stdenv.isDarwin [
       cocoapods
       git-lfs
@@ -123,9 +125,11 @@ in rec {
       dmenu
       docker
       dunst
-      firefox
+      exercism
+      inotify-tools
       libnotify
-      lutris
+      libtool
+      libvterm
       mangohud
       networkmanagerapplet
       nitrogen
@@ -200,6 +204,8 @@ in rec {
       init.defaultBranch = "master";
       init.templatedir = "${xdg.configHome}/git/templates";
       github.user = "elken";
+      "url \"https://invent.kde.org/\"".insteadOf = "kde:";
+      "url \"https://invent.kde.org/\"".pushInsteadOf = "kde:";
     };
   };
 
@@ -283,12 +289,13 @@ in rec {
       XDG_DATA_HOME = xdg.dataHome;
 
       PATH = concatStringsSep ":" ([
+        "$HOME/build/kde/kdesrc-build"
+        "/opt/flutter/bin"
+        "$HOME/.pub-cache/bin"
         "${pkgs.jdk17}/bin"
         "$HOME/bin"
         "/usr/local/share/dotnet"
         "$HOME/.composer/vendor/bin"
-        "$HOME/.emacs.doom/bin"
-        "$HOME/.emacs.d/bin"
         "$HOME/.config/emacs/bin"
         "$HOME/.cargo/bin"
         "$HOME/.local/bin"
@@ -299,12 +306,12 @@ in rec {
         "$HOME/.spicetify"
         "$HOME/.luarocks/bin"
         "$HOME/.config/chemacs/doom/bin"
+        "/usr/bin"
       ] ++ optionals pkgs.stdenv.isDarwin [
         "/opt/homebrew/bin"
         "$HOME/Library/Android/sdk/platform-tools"
         "$HOME/Library/Android/sdk/build-tools"
         "$HOME/Library/Android/sdk/cmdline-tools/latest/bin"
-        "$HOME/.pub-cache/bin"
       ] ++ [ "$PATH" ]);
 
       TERM = "xterm-256color";
@@ -316,6 +323,11 @@ in rec {
       PULSE_LATENCY_MSEC = 120;
 
       JAVA_HOME = pkgs.jdk17;
+      DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = 1;
+
+      # Needed for xwidgets in emacs
+      WEBKIT_FORCE_SANDBOX = 0;
+      WEBKIT_DISABLE_COMPOSITING_MODE = 1;
     } // (if stdenv.isDarwin then {
       ANDROID_HOME = "~/Library/Android/sdk";
     } else
@@ -363,6 +375,9 @@ in rec {
       # Powerlevel10k config
       . ${config.xdg.configHome}/zsh/p10k.zsh
 
+      if [ -e "~/build/kde/kdesrc-build" ]; then
+         . ${config.xdg.configHome}/zsh/kdesrc.zsh
+      fi
 
       # Bindings
       bindkey '^[[A' history-substring-search-up
@@ -466,11 +481,12 @@ in rec {
   };
 
   # The best IDE in the world, just lacks a good text editor
-  # programs.emacs = {
-  #   enable = stdenv.isLinux;
-  #   package = (pkgs.emacsNativeComp.override { withXwidgets = true; });
-  #   extraPackages = epkgs: with epkgs; [ vterm emacsql-sqlite pdf-tools ];
-  # };
+  # TODO Enable this as and when, still undecided which is better
+  programs.emacs = {
+    enable = false;
+    package = (pkgs.emacsNativeComp.override { withXwidgets = true; });
+    extraPackages = epkgs: with epkgs; [ vterm emacsql-sqlite pdf-tools ];
+  };
 
   # Mostly Linux things below
 
