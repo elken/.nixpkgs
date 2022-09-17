@@ -171,3 +171,4 @@ $RECYCLE.BIN/
 #
 # Per-app "scratchpad"s
 app/Console/Commands/Scratchpad.php
+.scratch.el

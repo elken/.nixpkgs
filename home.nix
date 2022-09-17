@@ -65,6 +65,7 @@ in rec {
       delta
       emacs-all-the-icons-fonts
       exa
+      exercism
       fasd
       fd
       gh
