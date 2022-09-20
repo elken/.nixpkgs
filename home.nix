@@ -49,6 +49,7 @@ in rec {
   # List of packages for the user
   home.packages = with pkgs;
     [
+      act
       (aspellWithDicts (dicts: with dicts; [ en en-computers en-science ]))
       asciinema
       bat
@@ -58,6 +59,7 @@ in rec {
       cask
       clippy
       clojure
+      clojure-lsp
       comma
       coreutils
       curl
