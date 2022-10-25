@@ -501,6 +501,8 @@ in rec {
   xdg.configFile = {
     "git/ignore".source = "${filesDir}/git/ignore";
     "alacritty/alacritty.yml".source = "${filesDir}/alacritty/alacritty.yml";
+    "mpd/mpd.conf".source = "${filesDir}/.mpdconf";
+    "mpd/playlists/.gitignore".text = "";
     "chemacs/profiles.el".source = "${filesDir}/.emacs-profiles.el";
     "zsh/vendor-completions".source = with pkgs;
       runCommandNoCC "vendored-zsh-completions" { } ''
